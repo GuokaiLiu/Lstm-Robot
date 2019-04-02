@@ -13,6 +13,9 @@ from keras.layers import LSTM
 import numpy as np
 
 
+
+# https://stackoverflow.com/questions/46102332/lstm-keras-api-predicting-multiple-outputs
+
 def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 	n_vars = 1 if type(data) is list else data.shape[1]
 	df = DataFrame(data)
@@ -36,8 +39,9 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 		agg.dropna(inplace=True)
 	return agg
 
+num = 100
 
-data = np.linspace(1,20,num=20).reshape((10,2))
+data = np.linspace(1,num,num=num).reshape((-1,2))
 scaler = MinMaxScaler(feature_range=(0,1))
 
 scaled = scaler.fit_transform(data)
@@ -70,8 +74,8 @@ test_X = test_X.reshape((test_X.shape[0], n_steps_in, n_features))
 
 # train_y = train_y.reshape((train_y.shape[0], n_steps_ou, n_features))
 # test_y = test_y.reshape((test_y.shape[0], n_steps_ou, n_features))
-train_y = train_y[:,0]
-test_y = test_y[:,0]
+train_y = train_y[:,0:2]
+test_y = test_y[:,0:2]
 print('The training data shape is ', train_X.shape)
 print('The testing data shape is ', test_X.shape)
 
@@ -80,7 +84,7 @@ print('The testing data shape is ', test_X.shape)
 # design network
 model = Sequential()
 model.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
-model.add(Dense(1))
+model.add(Dense(2))
 model.compile(loss='mae', optimizer='adam')
 # fit network
 history = model.fit(train_X, train_y, epochs=50, batch_size=2, validation_data=(test_X, test_y), verbose=2, shuffle=False)
