@@ -72,6 +72,9 @@ train_X = train_X.reshape((train_X.shape[0], n_hours, n_features))
 test_X = test_X.reshape((test_X.shape[0], n_hours, n_features))
 print('Train Data Reshape [samples, timesteps, features] ',train_X.shape, train_y.shape)
 print('Test Data Reshape [samples, timesteps, features] ',test_X.shape, test_y.shape)
+
+
+#%%
 # Evaluate Model
 # design network
 model = Sequential()

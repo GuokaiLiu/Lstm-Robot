@@ -7,9 +7,11 @@ from pandas import concat
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import mean_squared_error
-
 import numpy as np
 import matplotlib.pyplot as plt
+from keras.models import Sequential
+from keras.layers import Dense
+from keras.layers import LSTM
 
 
 
@@ -40,7 +42,8 @@ def series_to_supervised(data, n_in=1, n_out=1, dropnan=True):
 
 
 data = np.load('sheet1.npy')
-data = data[3500:,[0,1,-1]]
+data = data[:,[0,1,-1]]
+data[:,-1] = data[:,-1]-10
 
 scaler = MinMaxScaler(feature_range=(0,1))
 scaled = scaler.fit_transform(data)
@@ -88,9 +91,7 @@ print('The testing data shape is ', test_X.shape)
 # design network
 
 #%% Modeling
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.layers import LSTM
+
 model = Sequential()
 model.add(LSTM(50, input_shape=(train_X.shape[1], train_X.shape[2])))
 model.add(Dense(1))
@@ -98,23 +99,27 @@ model.compile(loss='mae', optimizer='adam')
 # fit network
 history = model.fit(train_X, train_y, epochs=50, batch_size=200, validation_data=(test_X, test_y), verbose=2, shuffle=False)
 # plot history
+
+fig = plt.figure(1)
+
 pyplot.plot(history.history['loss'], label='train')
 pyplot.plot(history.history['val_loss'], label='test')
 pyplot.legend()
 pyplot.show()
 
-#%%
+
 
 #%% Evaluate Model
 # make a prediction
 yhat = model.predict(test_X)
 test_X = test_X.reshape((test_X.shape[0], n_steps_in*n_features))
+
 #%%
 # invert scaling for forecast
 inv_yhat = concatenate((test_X[:, 0:2], yhat), axis=1)
 inv_yhat = scaler.inverse_transform(inv_yhat)
 inv_yhat = inv_yhat[:,-1]
-#%%
+
 # invert scaling for actual
 test_y = test_y.reshape((len(test_y), 1))
 inv_y = concatenate((test_X[:, 0:2], yhat), axis=1)
@@ -124,6 +129,14 @@ inv_y = inv_y[:,-1]
 rmse = sqrt(mean_squared_error(inv_y, inv_yhat))
 print('Test RMSE: %.3f' % rmse)
 
-
+fig = plt.figure(2)
 plt.scatter(np.arange(len(inv_yhat)),inv_yhat,s=20,edgecolors='r',facecolor='none')
-plt.scatter(np.arange(len(inv_y)),inv_y,s=1,edgecolors='b',)
+plt.scatter(np.arange(len(inv_y)),inv_y,s=0.5,edgecolors='b',)
+plt.tight_layout()
+
+#%%
+fig = plt.figure(3)
+plt.scatter(np.arange(len(inv_yhat)),inv_yhat-inv_y+10,s=20,edgecolors='r',facecolor='none')
+plt.scatter(np.arange(len(inv_y)),np.ones((len(inv_y),1))*10,s=0.5,edgecolors='b')
+plt.tight_layout()
+
